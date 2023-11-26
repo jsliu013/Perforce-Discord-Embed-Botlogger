@@ -5,7 +5,7 @@ from os.path import abspath, dirname, join
 import configparser
 import json
 
-from discord_webhooks import DiscordWebhooks
+from discord_webhook import DiscordWebhook, DiscordEmbed
 
 last_change_path = join(dirname(abspath(__file__)), "last_change.ini")
 config_path = join(dirname(abspath(__file__)), "config.ini")
@@ -32,7 +32,7 @@ class PerforceLogger():
 
     def p4_fetch(self, max):
       """ Fetches the changes  """
-      p4_changes = subprocess.Popen(f'p4 changes -t -m {max} -s submitted -e {self.read_num()+1} -l {self.repository}', stdout=subprocess.PIPE, shell=True)
+      p4_changes = subprocess.Popen(f'p4 changes -t -m {max} -s submitted -e {self.read_num()+1} -l {self.repo}', stdout=subprocess.PIPE, shell=True)
       #Get the result from the p4 command
       return p4_changes.stdout.read().decode('ISO-8859-1')
 
@@ -40,32 +40,32 @@ class PerforceLogger():
       """ Makes a list with all the changes """
       changes =[]
 
-		if(len(output)>0):
-			last_num_str = "" #this string will hold the first change number
-			lines = output.splitlines() #split the strings by new line
-			str_header = ""
-			str_content_buffer = [] # this temporary buffer will contain each line of a change
+      if(len(output)>0):
+        last_num_str = "" #this string will hold the first change number
+        lines = output.splitlines() #split the strings by new line
+        str_header = ""
+        str_content_buffer = [] # this temporary buffer will contain each line of a change
 			
-			for l in lines:
-				if(l.startswith('Change')): #If we see the word change (caracteristic of p4 changes), we close and open the buffer
-					if(len(str_content_buffer) > 0): #Append the changes array with the last registered strings (closing change)
-						changes.append(Change(str_header, ''.join(str_content_buffer)))
-					else: # Only happens on first occurence: save the first change number as it is the most recent
-						last_num_str = l.split(" ")[1]
-					str_header = l
-					str_content_buffer = [] # Start with a fresh buffer
-				else: #Applies to other lines (content)
-					str_content_buffer.append(l+"\n") #Add the current line
-			# --- end of for loop ---
+        for l in lines:
+            if(l.startswith('Change')): #If we see the word change (caracteristic of p4 changes), we close and open the buffer
+                if(len(str_content_buffer) > 0): #Append the changes array with the last registered strings (closing change)
+                    changes.append(Change(str_header, ''.join(str_content_buffer)))
+                else: # Only happens on first occurence: save the first change number as it is the most recent
+                    last_num_str = l.split(" ")[1]
+                str_header = l
+                str_content_buffer = [] # Start with a fresh buffer
+            else: #Applies to other lines (content)
+                str_content_buffer.append(l+"\n") #Add the current line
+		# --- end of for loop ---
 			
-			#Last line closing
-			changes.append(Change(str_header, ''.join(str_content_buffer)))
+		#Last line closing
+        changes.append(Change(str_header, ''.join(str_content_buffer)))
 			
-			# Also affect the last num
-			if(last_num_str != ""): # Affect the last change number to the config file
-				last_num = int(last_num_str)
-				self.save_num(last_num)
-		return changes
+		# Also affect the last num
+        if(last_num_str != ""): # Affect the last change number to the config file
+            last_num = int(last_num_str)
+            self.save_num(last_num)
+      return changes
 
     def save_num(self,number):
       """Write the integer corresponding to the latest change in the dedicated file"""
@@ -112,7 +112,7 @@ if __name__ == "__main__":
   ALLOW_SIGNATURE = config.getboolean('ApplicationSettings', 'enable_signature')
 
   #Init logger
-  logger = PerforceLogger(DISCORD_WEBHOOK_URL, repository=P4_TARGET)
+  logger = PerforceLogger(DISCORD_WEBHOOK_URL, P4_TARGET)
 
   #Perform checks - this line can be looped with a time.sleep(SECONDS) in case you don't use a scheduler
   logger.check_post_changes(signature=ALLOW_SIGNATURE)
