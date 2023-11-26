@@ -26,9 +26,9 @@ class Change():
     self.content = content
 
 class PerforceLogger():
-    def __init__(self, webhook_url, repository):
-      self.webhook_url = webhook_url
-      self.repository = repository
+    def __init__(self,webhook_url, repo):
+        self.webhook_url = webhook_url
+        self.repo = repo
 
     def p4_fetch(self, max):
       """ Fetches the changes  """
@@ -38,36 +38,34 @@ class PerforceLogger():
 
     def regroup_changes(self, output):
       """ Makes a list with all the changes """
-      changes = [] #Contains the change strings (one string per change)
-      
-      #If there are changes the string is not empty
-      if(len(output) > 0):
-        print("New changes detected")
-        last_num_str = "" #this string will hold the first change number
-        lines = output.splitlines() #split the strings by new line
-        str_header = ""
-        str_content_buffer = [] # this temporary buffer will contain each line of a change
-        for l in lines:
-          if(l.startswith('Change')): #If we see the word change (caracteristic of p4 changes), we close and open the buffer
-            if(len(str_content_buffer) > 0): #Append the changes array with the last registered strings (closing change)
-              changes.append(Change(str_header, ''.join(str_content_buffer)))
-            else: # Only happens on first occurence: save the first change number as it is the most recent
-              last_num_str = l.split(" ")[1]
-            str_header = l
-            str_content_buffer = [] # Start with a fresh buffer
-          else: #Applies to other lines (content)
-            str_content_buffer.append(l+"\n") #Add the current line
-        # --- end of for loop ---
+      changes =[]
 
-        #Last line closing
-        changes.append(Change(str_header, ''.join(str_content_buffer)))
-
-        # Also affect the last num
-        if(last_num_str != ""): # Affect the last change number to the config file
-          last_num = int(last_num_str)
-          self.save_num(last_num)
-      
-      return changes
+		if(len(output)>0):
+			last_num_str = "" #this string will hold the first change number
+			lines = output.splitlines() #split the strings by new line
+			str_header = ""
+			str_content_buffer = [] # this temporary buffer will contain each line of a change
+			
+			for l in lines:
+				if(l.startswith('Change')): #If we see the word change (caracteristic of p4 changes), we close and open the buffer
+					if(len(str_content_buffer) > 0): #Append the changes array with the last registered strings (closing change)
+						changes.append(Change(str_header, ''.join(str_content_buffer)))
+					else: # Only happens on first occurence: save the first change number as it is the most recent
+						last_num_str = l.split(" ")[1]
+					str_header = l
+					str_content_buffer = [] # Start with a fresh buffer
+				else: #Applies to other lines (content)
+					str_content_buffer.append(l+"\n") #Add the current line
+			# --- end of for loop ---
+			
+			#Last line closing
+			changes.append(Change(str_header, ''.join(str_content_buffer)))
+			
+			# Also affect the last num
+			if(last_num_str != ""): # Affect the last change number to the config file
+				last_num = int(last_num_str)
+				self.save_num(last_num)
+		return changes
 
     def save_num(self,number):
       """Write the integer corresponding to the latest change in the dedicated file"""
@@ -86,20 +84,20 @@ class PerforceLogger():
 
     def check_post_changes(self, signature=False):
       """ Posts each changes to the Discord server using the provided webhook. """
-      changes_as_str = self.p4_fetch(max=7)
+      changes_as_str = self.p4_fetch(max=10)
       changes = self.regroup_changes(changes_as_str)
+		
       for payload in reversed(changes):
-        if(payload != ''):
-          user = payload.user.split("@")[0]
-          message = DiscordWebhooks(self.webhook_url)
-          message.set_author(name=f"@{user} : new submit" )
-          message.set_content(color=0x51D1EC, description= f"`#{payload.num}`  - {payload.time} {payload.date} \n```fix\n{payload.content.lstrip()}``` ")
-          if(signature):
-            signature = get_funny_signature()
-            message.set_footer(text=f"{signature}", ts=True)
-          message.send()
-          print("Sent payload")
-        time.sleep(1) #sleep 1 second to avoid sending too much messages at once
+            if(payload != ''):
+                webhook = DiscordWebhook(url=self.webhook_url)
+                user = payload.user.split("@")[0]
+                embed = DiscordEmbed(title =f"`Change #{payload.num}`", description= f"```fix\n{payload.content.lstrip()}```", color = "51d1ec")
+                embed.set_author(name=f"{user}")
+                embed.add_embed_field(name="Time Committed", value= f"{payload.date} {payload.time} EST ", inline = False)
+                webhook.add_embed(embed)
+                response = webhook.execute()
+                print(response)
+            time.sleep(3)
 
 if __name__ == "__main__":
   """ Read config parameters and perform the checks """
