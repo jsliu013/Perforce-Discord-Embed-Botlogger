@@ -3,7 +3,7 @@ A simple python program to use with a scheduler that will notify a provided disc
 This bot is inspired by the limitations encountered when using [James Ives's Perforce Commit Logger](https://github.com/JamesIves/perforce-commit-discord-bot). 
 Utilizes a large portion of [Perforce-discord-botlogger](https://github.com/TibRib/Perforce-discord-botlogger) but changed to slightly including a minor redesign to an Embed. Sadly removes the cute footer message
 
-<img src="assets/example.png" style="max-width: 500px">
+<img src="assets/example.jpg" style="max-width: 500px">
 
 # Requirements
 The app is a python script that uses the [p4 changes](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_changes.html) command, you need to make sure you have a constant access to `p4 changes`.
