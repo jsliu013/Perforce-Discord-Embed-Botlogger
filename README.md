@@ -50,14 +50,9 @@ echo 139208 > app/last_change.ini
 ```
 
 # Automated run (Schedule)
-Same as for my tip on the loggin, if you are on Windows (use a cron in unix),
-1. Create a batch file : (one is provided in the repository)
-    ```batch
-    @echo off
-    python "path\to\bot\folder\app.py"
-    exit
-    ```
-2. Add a task to your [Windows Scheduler](https://digicruncher.com/task-scheduler-in-windows-10/) to run this batch program every 5/10 minutes.
+Same as for my tip on the loggin, if you are on Windows,
+1. Add a task to your [Windows Scheduler](https://digicruncher.com/task-scheduler-in-windows-10/) to run this batch program every 5/10 minutes.
+2. Set Action to "Start a program" and script to "/path/to/pythonw.exe" and add arguments to "/path/to/app.py"
 3. That's all ! 
 
 ## Notes
